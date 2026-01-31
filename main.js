@@ -1,20 +1,17 @@
 import OBR from "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk/+esm";
 
-// Uma chave pra salvar o tamanho travado no token
 const LOCK_KEY = "lock-token-size:lockedSize";
 
 OBR.onReady(async () => {
-  console.log("Lock Token Size: ready");
+  console.log("Lock Token Size loaded");
 
-  // Cria o item no menu de contexto
+  // Cria item no menu de contexto
   OBR.contextMenu.create({
     id: "lock-token-size",
     icons: [
       {
-        // ícone do menu contexto (pode ser qualquer imagem pequena)
-        icon: "public/icon.png", 
+        icon: "public/icon.png",
         label: "Lock Token Size",
-        // mostra apenas se o item for um token (layer CHARACTER, etc.)
         filter: {
           every: [
             { key: "layer", operator: "==", value: "CHARACTER" }
@@ -23,9 +20,6 @@ OBR.onReady(async () => {
       }
     ],
     async onClick(context) {
-      // context.items é um array de IDs dos tokens selecionados
-
-      // Guardar a escala atual (tamanho)
       await OBR.scene.items.updateItems(context.items, (items) => {
         for (let item of items) {
           item.metadata ??= {};
@@ -38,25 +32,22 @@ OBR.onReady(async () => {
     }
   });
 
-  // Observa alterações nos tokens
+  // Escuta mudanças e corrige redimensionamento
   OBR.scene.items.onChange(async (items) => {
-    // Filtra apenas tokens que estejam travados
-    const needsReset = items.filter((item) => {
-      return item.metadata?.[LOCK_KEY] &&
-             (item.width !== item.metadata[LOCK_KEY].width ||
-              item.height !== item.metadata[LOCK_KEY].height);
+    const altered = items.filter(item => {
+      const lock = item.metadata?.[LOCK_KEY];
+      if (!lock) return false;
+      return item.width !== lock.width || item.height !== lock.height;
     });
+    if (!altered.length) return;
 
-    if (!needsReset.length) return;
-
-    // Reverte o redimensionamento se alguém tentar mudar
     await OBR.scene.items.updateItems(
-      needsReset.map(i => i.id),
+      altered.map(i => i.id),
       (items) => {
         for (let item of items) {
-          const locked = item.metadata[LOCK_KEY];
-          item.width = locked.width;
-          item.height = locked.height;
+          const lock = item.metadata[LOCK_KEY];
+          item.width = lock.width;
+          item.height = lock.height;
         }
       }
     );
