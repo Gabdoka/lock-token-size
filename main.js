@@ -1,56 +1,64 @@
-import OBR from "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@latest/dist/index.js";
+import OBR from "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk/+esm";
 
-const EXT_ID = "lock-token-size";
-const LOCK_KEY = `${EXT_ID}/locked`;
+// Uma chave pra salvar o tamanho travado no token
+const LOCK_KEY = "lock-token-size:lockedSize";
 
-OBR.onReady(() => {
-  console.log("Lock Token Size ready");
+OBR.onReady(async () => {
+  console.log("Lock Token Size: ready");
 
-  // Cria a tool (ícone na barra lateral)
-  OBR.tool.create({
-    id: EXT_ID,
+  // Cria o item no menu de contexto
+  OBR.contextMenu.create({
+    id: "lock-token-size",
     icons: [
       {
-        icon: "public/icon.png",
-        label: "Lock Token Size"
+        // ícone do menu contexto (pode ser qualquer imagem pequena)
+        icon: "public/icon.png", 
+        label: "Lock Token Size",
+        // mostra apenas se o item for um token (layer CHARACTER, etc.)
+        filter: {
+          every: [
+            { key: "layer", operator: "==", value: "CHARACTER" }
+          ]
+        }
       }
     ],
-    onClick: async () => {
-      const role = await OBR.player.getRole();
-      if (role !== "GM") return;
+    async onClick(context) {
+      // context.items é um array de IDs dos tokens selecionados
 
-      const selection = await OBR.player.getSelection();
-      if (!selection.length) return;
-
-      await OBR.scene.items.updateItems(selection, (items) => {
-        for (const item of items) {
+      // Guardar a escala atual (tamanho)
+      await OBR.scene.items.updateItems(context.items, (items) => {
+        for (let item of items) {
           item.metadata ??= {};
-          if (item.metadata[LOCK_KEY]) {
-            delete item.metadata[LOCK_KEY];
-          } else {
-            item.metadata[LOCK_KEY] = {
-              width: item.width,
-              height: item.height
-            };
-          }
+          item.metadata[LOCK_KEY] = {
+            width: item.width,
+            height: item.height
+          };
         }
       });
     }
   });
 
-  // Observa mudanças e desfaz resize
-  OBR.scene.items.onChange((items) => {
-    for (const item of items) {
-      const lock = item.metadata?.[LOCK_KEY];
-      if (!lock) continue;
+  // Observa alterações nos tokens
+  OBR.scene.items.onChange(async (items) => {
+    // Filtra apenas tokens que estejam travados
+    const needsReset = items.filter((item) => {
+      return item.metadata?.[LOCK_KEY] &&
+             (item.width !== item.metadata[LOCK_KEY].width ||
+              item.height !== item.metadata[LOCK_KEY].height);
+    });
 
-      if (item.width !== lock.width || item.height !== lock.height) {
-        OBR.scene.items.updateItems([item.id], (draft) => {
-          draft.width = lock.width;
-          draft.height = lock.height;
-        });
+    if (!needsReset.length) return;
+
+    // Reverte o redimensionamento se alguém tentar mudar
+    await OBR.scene.items.updateItems(
+      needsReset.map(i => i.id),
+      (items) => {
+        for (let item of items) {
+          const locked = item.metadata[LOCK_KEY];
+          item.width = locked.width;
+          item.height = locked.height;
+        }
       }
-    }
+    );
   });
 });
-
