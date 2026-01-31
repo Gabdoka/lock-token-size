@@ -3,47 +3,42 @@ import OBR from "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk/+esm";
 const LOCK_KEY = "lock-token-size:lockedSize";
 
 OBR.onReady(async () => {
-  console.log("Lock Token Size extension loaded");
+  console.log("Lock Token Size loaded");
 
-  // ===== TESTE: Item simples no menu de contexto =====
+  // ---- Teste: item sem filtro, aparece sempre no contexto ----
   OBR.contextMenu.create({
     id: "lock-token-size-test",
     icons: [
       {
         icon: "/public/icon.png",
-        label: "🔒 Lock Token Size (test)"
+        label: "🔒 Lock Token Size (Test — Sempre aparece)"
+        // **sem filter** → aparece para qualquer item
       }
     ],
     onClick(context) {
-      console.log("🔒 Context Test clicked", context.items);
+      console.log("Test context menu clicked", context.items);
+      alert("Test menu item clicked!");
     }
   });
 
-  // ===== ITEM REAL DE BLOQUEIO =====
+  // ---- Item real de bloqueio ----
   OBR.contextMenu.create({
     id: "lock-token-size-lock",
     icons: [
       {
         icon: "/public/icon.png",
         label: "Lock Token Size",
-        filter: {
-          // O item aparece para qualquer token selecionado
-          any: [
-            { key: "layer", operator: "==", value: "CHARACTER" },
-            { key: "layer", operator: "==", value: "OBJECT" }
-          ]
-        }
+        // sem filtro aqui também → para fins de teste inicial
       }
     ],
     async onClick(context) {
-      // Checa se o usuário é GM
+      // verifica se GM
       const role = await OBR.player.getRole();
       if (role !== "GM") {
-        console.warn("Only GM can lock token size");
+        alert("Somente GM pode travar o tamanho.");
         return;
       }
 
-      // Lock do tamanho atual
       await OBR.scene.items.updateItems(context.items, (items) => {
         for (let item of items) {
           item.metadata ??= {};
@@ -53,23 +48,21 @@ OBR.onReady(async () => {
           };
         }
       });
-
-      console.log("Token size locked for", context.items);
+      console.log("Size locked for", context.items);
     }
   });
 
-  // ===== CORREÇÃO AUTOMÁTICA (listen para mudanças) =====
+  // ---- Observa mudanças e corrige resize ----
   OBR.scene.items.onChange(async (items) => {
-    const altered = items.filter((item) => {
+    const toFix = items.filter(item => {
       const lock = item.metadata?.[LOCK_KEY];
-      if (!lock) return false;
-      return item.width !== lock.width || item.height !== lock.height;
+      return lock && (item.width !== lock.width || item.height !== lock.height);
     });
 
-    if (!altered.length) return;
+    if (!toFix.length) return;
 
     await OBR.scene.items.updateItems(
-      altered.map(i => i.id),
+      toFix.map(i => i.id),
       (items) => {
         for (let item of items) {
           const lock = item.metadata[LOCK_KEY];
@@ -79,5 +72,4 @@ OBR.onReady(async () => {
       }
     );
   });
-
 });
