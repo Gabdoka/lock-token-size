@@ -4,5 +4,5 @@
   "manifest_version": 1,
   "description": "Impede que jogadores alterem o tamanho dos tokens",
   "icon": "public/icon.png",
-  "background_url": "/"
+  "background_url": "public/background.html"
 }
