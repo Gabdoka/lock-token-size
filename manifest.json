@@ -2,6 +2,7 @@
   "name": "Lock Token Size",
   "version": "1.0.0",
   "manifest_version": 1,
+  "description": "Impede que jogadores alterem o tamanho dos tokens",
   "icon": "public/icon.png",
-  "main": "main.js"
+  "background_url": "/"
 }
