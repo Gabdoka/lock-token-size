@@ -3,12 +3,13 @@
   "name": "Lock Token Size",
   "version": "1.0.0",
   "description": "Trava o tamanho dos tokens para jogadores",
-  "icon": "public/icon.svg",
+  "icon": "public/icon.png",
   "action": {
     "title": "Lock Token Size",
-    "icon": "public/icon.svg",
+    "icon": "public/icon.png",
     "popover": "public/index.html",
     "width": 260,
     "height": 80
   }
 }
+
