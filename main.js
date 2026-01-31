@@ -11,7 +11,7 @@ OBR.onReady(() => {
     id: EXT_ID,
     icons: [
       {
-        icon: "/public/icon.svg",
+        icon: "public/icon.png",
         label: "Lock Token Size"
       }
     ],
@@ -53,3 +53,4 @@ OBR.onReady(() => {
     }
   });
 });
+
