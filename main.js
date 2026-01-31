@@ -1,11 +1,12 @@
 import OBR from "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk/+esm";
 
+// Chave usada para armazenar tamanho travado no metadata
 const LOCK_KEY = "lock-token-size:lockedSize";
 
-OBR.onReady(async () => {
-  console.log("Lock Token Size loaded");
+OBR.onReady(() => {
+  console.log("Lock Token Size ready");
 
-  // Cria item no menu de contexto
+  // Cria item no menu de contexto (botão direito)
   OBR.contextMenu.create({
     id: "lock-token-size",
     icons: [
@@ -20,7 +21,8 @@ OBR.onReady(async () => {
       }
     ],
     async onClick(context) {
-      await OBR.scene.items.updateItems(context.items, (items) => {
+      // Salva o tamanho atual
+      await OBR.scene.items.updateItems(context.items, items => {
         for (let item of items) {
           item.metadata ??= {};
           item.metadata[LOCK_KEY] = {
@@ -32,19 +34,20 @@ OBR.onReady(async () => {
     }
   });
 
-  // Escuta mudanças e corrige redimensionamento
-  OBR.scene.items.onChange(async (items) => {
-    const altered = items.filter(item => {
+  // Observa mudanças e reseta caso alguém mude o tamanho
+  OBR.scene.items.onChange(async items => {
+    const changed = items.filter(item => {
       const lock = item.metadata?.[LOCK_KEY];
       if (!lock) return false;
       return item.width !== lock.width || item.height !== lock.height;
     });
-    if (!altered.length) return;
+
+    if (!changed.length) return;
 
     await OBR.scene.items.updateItems(
-      altered.map(i => i.id),
-      (items) => {
-        for (let item of items) {
+      changed.map(i => i.id),
+      items => {
+        for (const item of items) {
           const lock = item.metadata[LOCK_KEY];
           item.width = lock.width;
           item.height = lock.height;
