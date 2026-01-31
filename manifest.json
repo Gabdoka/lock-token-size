@@ -3,5 +3,5 @@
   "version": "1.0.0",
   "manifest_version": 1,
   "icon": "public/icon.png",
-  "entry": "public/index.html"
+  "main": "main.js"
 }
